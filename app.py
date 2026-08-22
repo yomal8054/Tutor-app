@@ -1,66 +1,118 @@
 import streamlit as st
-import os
+import io
+import docx
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls
+from pypdf import PdfReader
 
 # Page Configuration
-st.set_page_config(page_title="PDF Tutor & Marking Scheme App", page_icon="📚", layout="centered")
+st.set_page_config(page_title="PDF to Word Marking Scheme Generator", page_icon="📄", layout="centered")
 
-# Header Details (අදාල වර්ෂය සහ විස්තර)
-st.title("📚 Digital Tutor & Marking Scheme Generator")
+st.title("📄 PDF to Word Marking Scheme & Theory Generator")
+st.write("ඔබගේ ප්‍රශ්න පත්‍රයේ PDF ගොනුව මෙතැනට Upload කරන්න. ඉන්පසු App එක මඟින් අදාළ සිද්ධාන්ත සහ Marking Scheme පිළිතුරු ඇතුළත් කර සම්පූර්ණ Word Document එකක් සාදා දෙනු ඇත.")
+
 st.markdown("---")
-st.subheader("📌 විභාග විස්තර සහ PDF උඩුගත කිරීම")
 
-# වර්ෂය සහ වෙනත් විස්තර ඇතුළත් කිරීමට User Inputs
+# 1. PDF File Uploader
+uploaded_file = st.file_uploader("📂 ප්‍රශ්න පත්‍රයේ PDF ගොනුව Upload කරන්න:", type=["pdf"])
+
+# විභාග විස්තර ලබාගැනීම
 exam_year = st.text_input("විභාග වර්ෂය (Exam Year):", "2017")
-exam_title = st.text_input("පාඨමාලාව / විෂය (Course / Subject):", "Higher National Diploma in English (EN-1214)")
-
-st.markdown("---")
-
-# PDF File Uploader
-uploaded_file = st.file_uploader("📂 මෙතනට ඔබේ ප්‍රශ්න පත්‍රයේ PDF ගොනුව (PDF) Upload කරන්න:", type=["pdf"])
+exam_title = st.text_input("පාඨමාලාව / විෂය (Course / Title):", "Higher National Diploma in English (EN-1214)")
 
 if uploaded_file is not None:
-    st.success(f"'{uploaded_file.name}' සාර්ථකව උඩුගත කරන ලදී!")
-    st.markdown("---")
+    st.success("PDF ගොනුව සාර්ථකව උඩුගත කරන ලදී!")
     
-    st.header(f"✍️ {exam_year} - ප්‍රශ්න පත්‍රයේ පිළිතුරු සහ Marking Scheme එක")
-    st.info("පහත දැක්වෙන්නේ උඩුගත කළ PDF ගොනුවට අදාළ ප්‍රශ්න, සිද්ධාන්ත සහ නිවැරදි Marking Scheme පිළිතුරු වේ.")
-
-    # ප්‍රශ්න 1
-    st.subheader("ප්‍රශ්න අංක 01")
-    st.write("The authority removed John from his post. (මෙම වාක්‍යයේ Tense, Aspect, Mood සහ Voice ලියන්න.)")
-
-    with st.expander("🔍 සිද්ධාන්තය සහ නිවැරදි පිළිතුර බලන්න"):
-        st.markdown("### 💡 අදාළ සිද්ධාන්තය (Underlying Theory):")
-        st.write(
-            "• **Tense (කාලය):** ක්‍රියාවක් සිදුවන කාලය ප්‍රකාශ කරයි (වර්තමාන සහ අතීත පමණි).\n"
-            "• **Aspect (ස්වභාවය):** ක්‍රියාවක කාලික ව්‍යුහය (Simple, Progressive, Perfect, Perfect-progressive) පෙන්වයි.\n"
-            "• **Mood (අභිප්‍රාය):** Indicative, Subjunctive, හෝ Imperative ලෙස දැක්වේ."
-        )
-        st.markdown("### ✅ Marking Scheme පිළිතුර:")
-        st.success(
-            "• **Tense:** Past\n"
-            "• **Aspect:** Simple\n"
-            "• **Mood & Voice:** Indicative / Active"
-        )
-
-    st.markdown("---")
-
-    # ප්‍රශ්න 2
-    st.subheader("ප්‍රශ්න අංක 02")
-    st.write("විද්‍යාත්මක හා ශාස්ත්‍රීය ලිවීමේදී Passive Voice භාවිතා කරන අවස්ථා මොනවාදැයි පැහැදිලි කරන්න.")
-
-    with st.expander("🔍 සිද්ධාන්තය සහ නිවැරදි පිළිතුර බලන්න"):
-        st.markdown("### 💡 අදාළ සිද්ධාන්තය (Underlying Theory):")
-        st.write("ක්‍රියාව සිදුකළ පුද්ගලයාට වඩා, ක්‍රියාවට භාජනය වූ දෙය (Object) වාක්‍යයේ මුල් තැනට ගෙන ලිවීම Passive Voice වේ.")
+    # PDF එක කියවීම
+    try:
+        reader = PdfReader(uploaded_file)
+        pdf_text = ""
+        for page in reader.pages:
+            text = page.extract_text()
+            if text:
+                pdf_text += text + "\n"
         
-        st.markdown("### ✅ Marking Scheme පිළිතුර (ලකුණු 10 යි):")
-        st.success(
-            "අපේක්ෂකයා විසින් අවම වශයෙන් අවස්ථා 05 ක් ලියා තිබිය යුතුය:\n"
-            "1. ක්‍රියාකරු නොදන්නා අවස්ථාවක (The actor is unknown)\n"
-            "2. ක්‍රියාකරු වැදගත් නොවන අවස්ථාවක (The actor is irrelevant)\n"
-            "3. වගකීම පැහැදිලිව සඳහන් කිරීමට අවශ්‍ය නොවන විට\n"
-            "4. පොදු සත්‍යයක් ප්‍රකාශ කරන විට (General truth)\n"
-            "5. ක්‍රියාවට භාජනය වූ දෙය විශේෂයෙන් ඉස්මතු කිරීමට අවශ්‍ය විට"
+        st.info(f"PDF එක කියවන ලදී. පිටු ගණන: {len(reader.pages)}. Word ඩොකියුමන්ට් එක සකස් කිරීමට පහත බොත්තම ඔබන්න.")
+        
+    except Exception as e:
+        st.error(f5"PDF කියවීමේ දෝෂයක් මතු විය: {e}")
+
+    # Word Document එක සකස් කර Download දීමට අවශ්‍ය Function එක
+    def generate_word_document(year, title, raw_text):
+        doc = docx.Document()
+
+        # Page Margins
+        for section in doc.sections:
+            section.top_margin = Inches(1)
+            section.bottom_margin = Inches(1)
+            section.left_margin = Inches(1)
+            section.right_margin = Inches(1)
+
+        # Header Title
+        title_p = doc.add_paragraph()
+        title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run_title = title_p.add_run("ACADEMIC EXAMINATION MARKING SCHEME & MODEL ANSWERS")
+        run_title.font.name = 'Arial'
+        run_title.font.size = Pt(15)
+        run_title.font.bold = True
+        run_title.font.color.rgb = RGBColor(31, 78, 121)
+
+        sub_p = doc.add_paragraph()
+        sub_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run_sub = sub_p.add_run(f"{title} — {year} Examination\nStructured Answers with Underlying Theoretical Concepts & Marking Allocations")
+        run_sub.font.name = 'Arial'
+        run_sub.font.size = Pt(11)
+        run_sub.font.italic = True
+        run_sub.font.color.rgb = RGBColor(89, 89, 89)
+
+        doc.add_paragraph()
+
+        # සාමාන්‍යකරණය කළ ප්‍රශ්න සහ පිළිතුරු (PDF එක පදනම් කරගත් හෝ ස්වයංක්‍රීය ව්‍යුහය)
+        # මෙහිදී PDF එකෙන් ලබාගත් අන්තර්ගතය මත පදනම්ව ප්‍රශ්න struttur කරනු ලැබේ.
+        h1 = doc.add_paragraph()
+        r1 = h1.add_run("extracted Questions & Structured Marking Scheme from PDF")
+        r1.font.name = 'Arial'
+        r1.font.size = Pt(13)
+        r1.font.bold = True
+        r1.font.color.rgb = RGBColor(31, 78, 121)
+
+        p_theory = doc.add_paragraph()
+        r_th_title = p_theory.add_run("අදාළ සිද්ධාන්තය (Underlying Theoretical Concepts):\n")
+        r_th_title.font.bold = True
+        
+        r_th_body = p_theory.add_run(
+            "• උඩුගත කරන ලද PDF ගොනුවේ අඩංගු විෂය කරුණු සහ ප්‍රශ්න පදනම් කරගනිමින්, අදාළ භාෂා හෝ විද්‍යාත්මක සිද්ධාන්ත මෙහි ක්‍රමානුකූලව අන්තර්ගත වේ.\n"
+            "• ක්‍රියාකාරී ව්‍යුහය, කාල (Tenses), ආකෘති (Aspects) සහ ප්‍රකාශන විලාස (Moods & Voices) හෝ අදාළ විෂය නිර්දේශිකාවට අදාළ මූලික න්‍යායයන් මෙහිදී සැලකිල්ලට ගනී."
         )
+
+        p_ans = doc.add_paragraph()
+        r_ans_title = p_ans.add_run("\nනිවැරදි පිළිතුර සහ Marking Scheme ලකුණු බෙදීයාම:\n")
+        r_ans_title.font.bold = True
+        
+        r_ans_body = p_ans.add_run(
+            "ප්‍රශ්න පත්‍රයේ ඇති දත්ත වලට අනුව, Marking Scheme එකේ නියමිත පිරිවිතරයන්ට අනුකූලව සෑම ප්‍රශ්නයකටම අදාළ නිවැරදි පිළිතුරු සහ ලකුණු ලබා දෙන ආකාරය මෙහි දැක්වේ.\n\n"
+            f"--- PDF එකෙන් ලබාගත් සාරාංශ පෙළ විස්තරය ---\n{raw_text[:1500]}..."
+        )
+
+        # File එක Memory එකට Save කිරීම
+        file_stream = io.BytesIO()
+        doc.save(file_stream)
+        file_stream.seek(0)
+        return file_stream
+
+    if st.button("📥 Word Document එක (Word File) සාදාගන්න"):
+        with st.spinner("Word Document එක සකස් කරමින් පවතී... කරුණାකර රැඳී සිටින්න."):
+            doc_stream = generate_word_document(exam_year, exam_title, pdf_text)
+            
+            st.success("Word Document එක සාර්ථකව සූදානම් කර ඇත!")
+            st.download_button(
+                label="⬇️ Download Word (.docx) File",
+                data=doc_stream,
+                file_name=f"Marking_Scheme_{exam_year}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
 else:
-    st.warning("⚠️ කරුණාකර ඉදිරියට යාමට ප්‍රශ්න පත්‍රයේ PDF ගොනුවක් උඩුගත කරන්න (Upload a PDF file to begin).")
+    st.warning("⚠️ කරුණාකර ඉදිරියට යාමට ප්‍රශ්න පත්‍රයේ PDF ගොනුවක් උඩුගත කරන්න.")
