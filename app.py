@@ -38,7 +38,7 @@ if uploaded_file is not None:
         st.info(f"PDF එක කියවන ලදී. පිටු ගණන: {len(reader.pages)}. Word ඩොකියුමන්ට් එක සකස් කිරීමට පහත බොත්තම ඔබන්න.")
         
     except Exception as e:
-        st.error(f5"PDF කියවීමේ දෝෂයක් මතු විය: {e}")
+        st.error(f"PDF කියවීමේ දෝෂයක් මතු විය: {e}")
 
     # Word Document එක සකස් කර Download දීමට අවශ්‍ය Function එක
     def generate_word_document(year, title, raw_text):
@@ -70,10 +70,9 @@ if uploaded_file is not None:
 
         doc.add_paragraph()
 
-        # සාමාන්‍යකරණය කළ ප්‍රශ්න සහ පිළිතුරු (PDF එක පදනම් කරගත් හෝ ස්වයංක්‍රීය ව්‍යුහය)
-        # මෙහිදී PDF එකෙන් ලබාගත් අන්තර්ගතය මත පදනම්ව ප්‍රශ්න struttur කරනු ලැබේ.
+        # ප්‍රශ්න සහ පිළිතුරු ව්‍යුහය
         h1 = doc.add_paragraph()
-        r1 = h1.add_run("extracted Questions & Structured Marking Scheme from PDF")
+        r1 = h1.add_run("Extracted Questions & Structured Marking Scheme from PDF")
         r1.font.name = 'Arial'
         r1.font.size = Pt(13)
         r1.font.bold = True
@@ -104,7 +103,7 @@ if uploaded_file is not None:
         return file_stream
 
     if st.button("📥 Word Document එක (Word File) සාදාගන්න"):
-        with st.spinner("Word Document එක සකස් කරමින් පවතී... කරුණାකර රැඳී සිටින්න."):
+        with st.spinner("Word Document එක සකස් කරමින් පවතී... කරුණාකර රැඳී සිටින්න."):
             doc_stream = generate_word_document(exam_year, exam_title, pdf_text)
             
             st.success("Word Document එක සාර්ථකව සූදානම් කර ඇත!")
